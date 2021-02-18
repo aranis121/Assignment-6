@@ -30,7 +30,7 @@ const showImages = (images) => {
 
   })
   toggleDisplay();
-  showMessage('success', 'Image load success.');
+  showMessage('danger', 'Image loaded.');
 }
 
 //get  image  from api
@@ -145,7 +145,7 @@ searchBtn.addEventListener('click', function () {
   if (search.value.match(regex)) {
     getImages(search.value);
   } else {
-    showMessage('not-success', 'Please input a name.')
+    showMessage('not-danger', 'Please input a name.')
   }
   sliders.length = 0;
   document.getElementById('count').innerText = sliders.length;
@@ -156,7 +156,7 @@ sliderBtn.addEventListener('click', function () {
   createSlider()
 })
 
-// display for spinner and display image
+// display for spinner 
 const toggleDisplay = () => {
   spinner.classList.toggle('d-none');
 }
@@ -166,11 +166,11 @@ const showMessage = (status, message) => {
   const parentDiv = document.getElementById('message');
   parentDiv.innerHTML = '';
   const messageDiv = document.createElement('p');
-  messageDiv.classList = `text-center message alert ${status == 'success' ? 'alert-success' : ' alert-danger'}`;
+  messageDiv.classList = `text-center message alert ${status == 'danger' ? 'alert-danger' : ' alert-danger'}`;
   messageDiv.innerText = message;
   parentDiv.appendChild(messageDiv);
 
-  if (status !== 'success') {
+  if (status !== 'danger') {
     imagesArea.style.display = 'none';
   }
   setTimeout(() => {
