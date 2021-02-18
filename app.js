@@ -1,9 +1,12 @@
 const imagesArea = document.querySelector('.images');
 const gallery = document.querySelector('.gallery');
 const galleryHeader = document.querySelector('.gallery-header');
-const searchBtn = document.getElementById('search-btn');
+const searchBtn = document.getElementById('search-btn'); 
+const search = document.getElementById('search');
+const spinner = document.querySelector('.spinner');
 const sliderBtn = document.getElementById('create-slider');
 const sliderContainer = document.getElementById('sliders');
+const durationInput = document.getElementById('duration');
 // selected image 
 let sliders = [];
 
@@ -18,43 +21,59 @@ const showImages = (images) => {
   imagesArea.style.display = 'block';
   gallery.innerHTML = '';
   // show gallery title
-  galleryHeader.style.display = 'flex';
+  galleryHeader.style.display = 'block';
   images.forEach(image => {
     let div = document.createElement('div');
     div.className = 'col-lg-3 col-md-4 col-xs-6 img-item mb-2';
-    div.innerHTML = ` <img class="img-fluid img-thumbnail" onclick=selectItem(event,"${image.webformatURL}") src="${image.webformatURL}" alt="${image.tags}">`;
+    div.innerHTML = ` <img class="img-fluid img-thumbnail image"  onclick=selectImage(event,"${image.webformatURL}") src="${image.webformatURL}" alt="${image.tags}">`;
     gallery.appendChild(div)
-  })
 
+  })
+  toggleDisplay();
+  showMessage('success', 'Image load success.');
 }
 
-const getImages = (query) => {
-  fetch(`https://pixabay.com/api/?key=${KEY}=${query}&image_type=photo&pretty=true`)
-    .then(response => response.json())
-    .then(data => showImages(data.hitS))
-    .catch(err => console.log(err))
+//get  image  from api
+const getImages = async (query) => {
+  const response = await fetch(`https://pixabay.com/api/?key=${KEY}=${query}&image_type=photo&pretty=true`);
+  try {
+    const data = await response.json();
+    if (data.hits.length) {
+      toggleDisplay();
+      showImages(data.hits);
+      imageSelectUnselect(); 
+    } else {
+      showMessage('not-found', 'Image not found! Please try another image.')
+    }
+  } catch (error) {
+    showMessage('not-found', 'Something is wrong! Please try again.')
+  }
 }
 
 let slideIndex = 0;
-const selectItem = (event, img) => {
+
+ //image select count
+const selectImage = (event, img) => {
   let element = event.target;
-  element.classList.add('added');
- 
+  element.classList.toggle('added');
   let item = sliders.indexOf(img);
   if (item === -1) {
     sliders.push(img);
   } else {
-    alert('Hey, Already added !')
+    sliders.splice(item, 1);
   }
+  document.getElementById('count').innerText = sliders.length;
+  imageSelectUnselect(); 
 }
-var timer
+
+let timer;
+//create images slider
 const createSlider = () => {
-  // check slider image length
+  search.value = '';
   if (sliders.length < 2) {
     alert('Select at least 2 image.')
     return;
   }
-  // crate slider previous next area
   sliderContainer.innerHTML = '';
   const prevNext = document.createElement('div');
   prevNext.className = "prev-next d-flex w-100 justify-content-between align-items-center";
@@ -63,11 +82,13 @@ const createSlider = () => {
   <span class="next" onclick="changeItem(1)"><i class="fas fa-chevron-right"></i></span>
   `;
 
-  sliderContainer.appendChild(prevNext)
+  sliderContainer.appendChild(prevNext);
+  //show main aria
   document.querySelector('.main').style.display = 'block';
   // hide image aria
   imagesArea.style.display = 'none';
-  const duration = document.getElementById('duration').value || 1000;
+  const duration = Math.abs(durationInput.value) || 1.5;
+  console.log(duration);
   sliders.forEach(slide => {
     let item = document.createElement('div')
     item.className = "slider-item";
@@ -76,11 +97,11 @@ const createSlider = () => {
     alt="">`;
     sliderContainer.appendChild(item)
   })
-  changeSlide(0)
+  changeSlide(0);
   timer = setInterval(function () {
     slideIndex++;
     changeSlide(slideIndex);
-  }, duration);
+  }, duration * 1000);
 }
 
 // change slider index 
@@ -109,14 +130,67 @@ const changeSlide = (index) => {
   items[index].style.display = "block"
 }
 
+//search files enter keyup
+search.addEventListener('keyup', (e) => {
+  if (e.key === 'Enter') {
+    searchBtn.click();
+  };
+});
+
+//search button click
 searchBtn.addEventListener('click', function () {
   document.querySelector('.main').style.display = 'none';
   clearInterval(timer);
-  const search = document.getElementById('search');
-  getImages(search.value)
+  const regex = /[a-zA-Z]/; 
+  if (search.value.match(regex)) {
+    getImages(search.value);
+  } else {
+    showMessage('not-success', 'Please input a name.')
+  }
   sliders.length = 0;
+  document.getElementById('count').innerText = sliders.length;
 })
 
+//slider button click 
 sliderBtn.addEventListener('click', function () {
   createSlider()
 })
+
+// display for spinner and display image
+const toggleDisplay = () => {
+  spinner.classList.toggle('d-none');
+}
+
+//show status 
+const showMessage = (status, message) => {
+  const parentDiv = document.getElementById('message');
+  parentDiv.innerHTML = '';
+  const messageDiv = document.createElement('p');
+  messageDiv.classList = `text-center message alert ${status == 'success' ? 'alert-success' : ' alert-danger'}`;
+  messageDiv.innerText = message;
+  parentDiv.appendChild(messageDiv);
+
+  if (status !== 'success') {
+    imagesArea.style.display = 'none';
+  }
+  setTimeout(() => {
+    parentDiv.innerHTML = '';
+  }, 2000)
+
+}
+//onload clear option
+const clearAll = () => {
+  search.value = '';
+  durationInput.value = '';
+};
+//image title-attribute set
+const imageSelectUnselect = () => {
+  const images = document.querySelectorAll('.image');
+  [...images].forEach(image => {
+    if (image.classList.contains('added')) {
+      image.setAttribute("title", "unselect");
+    } else {
+      image.setAttribute("title", "select");
+    }
+  });
+}
